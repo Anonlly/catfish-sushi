@@ -5,7 +5,7 @@ const dc = require("discord.js")
 const settings = {
     autoKick:false
 }
-
+// test
 const isoToDate = (duration)=>{
   let charlist = duration.split("")
   let lastnum = ""
