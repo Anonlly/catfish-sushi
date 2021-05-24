@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@discordjs/opus": "^0.5.0",
+    "@supabase/supabase-js": "^1.11.13",
     "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
@@ -10,5 +11,20 @@
     "node-fetch": "^2.6.1",
     "yt-search": "^2.8.0",
     "ytdl-core": "^4.8.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.14.3",
+    "@babel/core": "^7.14.3",
+    "@babel/node": "^7.14.2",
+    "@babel/preset-env": "^7.14.2",
+    "babel-preset-es2020": "^1.0.2",
+    "gulp": "^4.0.2",
+    "gulp-babel": "^8.0.0",
+    "gulp-plumber": "^1.2.1"
+  },
+  "scripts": {
+    "compile": "babel src --out-dir dist",
+    "start": "node dist/index.js",
+    "serve": "babel src --out-dir dist&&node dist/index.js"
   }
 }
