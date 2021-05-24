@@ -67,14 +67,14 @@ export default async (msg) => {
                 .from("queues")
                 .update({queue:JSON.stringify(queue)})
                 .eq("gid", msg.guild.id)
-                
-                await supabase
+
+                supabase
                 .from("positions")
                 .select("*")
                 .eq("gid", msg.guild.id)
                 .then((data, err)=>{
                     if(data.length == 0){
-                        await supabase.from("positions").insert({gid:msg.guild.id, pos:0})
+                        supabase.from("positions").insert({gid:msg.guild.id, pos:0})
                     }
                 })
             })
