@@ -1,11 +1,10 @@
 require("dotenv").config()
 import express from "express";
 import * as dc from "discord.js"
-import { isoToDate } from "./modules.js"
-import ytdl from "ytdl-core"
 import avatar from "./avatar"
 import db from "../db.json"
 import fs from "fs"
+import play from "./play.js"
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = 'https://hknnhacamqrcalaqobvh.supabase.co'
@@ -66,6 +65,16 @@ app.get('/', (req, res) => res.send('Hello World!'));
 
 app.listen(port, () => console.log(`listening at http://localhost:${port}`));
 const bot = new dc.Client({ ws: { intents: new dc.Intents(dc.Intents.ALL) } });
+
+
+const { Player } = require("discord-music-player");
+const player = new Player(bot, {
+    leaveOnEmpty: true,
+    leaveOnStop: true,
+    timeout:300000,
+
+});
+
 let reports = []
 let fakeIsBusy = false
 const token = process.env['TOKEN'] || ""
@@ -85,15 +94,129 @@ bot.on("message", (msg) => {
     // if(msg.content.toLowerCase().startsWith("via test")){
     //     console.log(msg.guild.voice.connection)
     // }
-
-    if (msg.content.toLowerCase().startsWith("via avatar")) {
-        avatar(msg)
+    if (msg.content.toLowerCase().startsWith("via help")) {
+        msg.channel.send({
+            embed:{
+                "title": "Command List",
+                "description": "**Via Avatar**\n\nGet user avatar\nusage: `via avatar {user}`\nalias: `av`\n\n\n**Via Play**\n\nPlay a song, unavailable if you're not in a voice channel.\nusage: `via play {song title}`\nalias: `p`\n\n**Via NowPlaying**\n\nGet now playing song, unavailable if you're not in a voice channel.\nusage: `via nowplaying`\nalias: `np`\n\n**Via Skip**\nSkip the currently playing song.\nusage: `via skip`\nalias:\n\n**Via Remove**\nRemove a song in the queue.\nusage: `via remove {song number}`\nalias: `rm`\n\n**Via Queue**\nGet queue.\nusage: `via queue`\nalias: `q`\n\n**Via Loop**\nLoop current song/queue.\nusage: `via loop`\n   `via loopqueue`\n\n**Via Stop**\nDisconnect from a voice channel.\nusage: `via stop`\nalias: `dc`",
+                "author": {
+                  "name": "Via",
+                  "icon_url": "https://cdn.discordapp.com/attachments/793814695319437326/846632751254994984/index.jpg"
+                },
+                "color": 16223655
+                
+            }
+        })
+        return
     }
 
-    if (msg.content.toLowerCase().startsWith("via play")) {
+    if (msg.content.toLowerCase().startsWith("via avatar") || msg.content.toLowerCase().startsWith("via av")) {
+        avatar(msg, bot)
+        return
+    }
+    if (msg.content.toLowerCase().startsWith("via nowplaying") || msg.content.toLowerCase().startsWith("via np")) {
+        player.nowPlaying(msg).then(song=>{
+            if(song)
+                msg.channel.send({
+                    embed:{
+                        "title": "Now Playing",
+                        "description": "```\n"+song.name+"\n"+player.createProgressBar(msg, {
+                            size: 15,
+                            block: '=',
+                            arrow: '>'
+                        })+"```",
+                        "color": 16223655
+                      }
+                });
+        })
+        return
+    }
+    if (msg.content.toLowerCase().startsWith("via play") || msg.content.toLowerCase().startsWith("via p")) {
+        const arr = msg.content.split(" ")
+        arr.shift()
+        arr.shift()
+        const suffix = arr.join(" ")
+        if(player.isPlaying(msg)){
+            player.addToQueue(msg, {
+                search: suffix,
+                requestedBy: msg.author.tag
+            }).then((song)=>{
+                if(song){
+                    msg.channel.send(`${song.name} added to queue`)
+                }
+            })
+        }else{
+            player.play(msg, {
+                search: suffix,
+                requestedBy: msg.author.tag
+            }).then((song)=>{
+                if(song){
+                    msg.channel.send(`Playing ${song.name}`)
+                }
+            })
+        }
+
+        return
+    }
+    if(msg.content.toLowerCase().startsWith("via skip")){
+        const song = player.skip(msg)
+        if(song){
+            msg.channel.send(`${song.name} was skipped`)
+        }
+        return
+    }
+    if(msg.content.toLowerCase().startsWith("via remove") || msg.content.toLowerCase().startsWith("via rm")){
+        const arr = msg.content.split(" ")
+        arr.shift()
+        arr.shift()
+        if(!isNaN(parseInt(arr.join("")))){
+            const song = player.remove(msg, parseInt(arr.join(""))-1)
+            if(song){
+                msg.channel.send(`Removed song ${song.name} from queue`)
+            }
+
+        }
+        return
+    }
+    if(msg.content.toLowerCase().startsWith("via stop") || msg.content.toLowerCase().startsWith("via dc")){
+        if(player.stop(msg)){
+            msg.channel.send("Ok")
+        }
+        return
+    }
+    if(msg.content.toLowerCase().startsWith("via loopqueue")){
+        let toggle = player.toggleQueueLoop(msg);
         
+        if(toggle === null)
+            return;
+        else if (toggle)
+            msg.channel.send('Queue Loop On');
+        else msg.channel.send('Queue Loop Off');
+        return
     }
-
+    if(msg.content.toLowerCase().startsWith("via loop")){
+        let toggle = player.toggleLoop(msg);
+        
+        if(toggle === null)
+            return;
+        else if (toggle)
+            msg.channel.send('Loop On');
+        else msg.channel.send('Loop Off');
+        return
+    }
+    if(msg.content.toLowerCase().startsWith("via queue")||msg.content.toLowerCase().startsWith("via q")){
+        const queue = player.getQueue(msg)
+        if(queue){
+            msg.channel.send({
+                embed:{
+                    "title": "Song Queue",
+                    "description": `\`\`\`${(queue.songs.map((q, index)=>(`${index+1}. ${q.name}`))).join("\n")}\`\`\``,
+                    "color": 16223655
+                  }
+            })
+        }
+        return
+    }
 
     admins.forEach(id => {
         if (msg.author.id === id) {
@@ -103,6 +226,7 @@ bot.on("message", (msg) => {
                 const text = arr.join("")
                 msg.channel.send(text)
                 msg.delete()
+                return
             }
             else if (msg.content.toLowerCase().startsWith("via say")) {
                 try {
@@ -116,6 +240,7 @@ bot.on("message", (msg) => {
                         c.send(text)
                     });
                 } catch (e) { console.log(e) }
+                
             }
             else if (msg.content.toLowerCase().startsWith("via spam")) {
                 try {
@@ -162,6 +287,7 @@ Date:${report.date}
                 `)
             })
         })
+        return
     }
     if (msg.content.toLowerCase().startsWith("via autokick")) {
         admins.forEach(id => {
@@ -170,7 +296,7 @@ Date:${report.date}
                 msg.reply("OK")
             }
         })
-
+        return
     }
 })
 bot.on("guildMemberAdd", member => {

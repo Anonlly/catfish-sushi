@@ -1,15 +1,15 @@
 "use strict";
 
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
+
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports["default"] = void 0;
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
 var isoToDate = function isoToDate(duration) {
   var charlist = duration.split("");
@@ -52,13 +52,12 @@ var isoToDate = function isoToDate(duration) {
 
 var queue = /*#__PURE__*/function () {
   function queue(gid) {
-    _classCallCheck(this, queue);
-
+    (0, _classCallCheck2["default"])(this, queue);
     this.gid = gid;
     this.queue = new Array();
   }
 
-  _createClass(queue, [{
+  (0, _createClass2["default"])(queue, [{
     key: "addQueue",
     value: function addQueue(link, title, duration) {
       this.queue.push({
@@ -99,19 +98,17 @@ var queue = /*#__PURE__*/function () {
       }
     }
   }]);
-
   return queue;
 }();
 
 var position = /*#__PURE__*/function () {
   function position(gid, pos) {
-    _classCallCheck(this, position);
-
+    (0, _classCallCheck2["default"])(this, position);
     this.pos = pos;
     this.gid = gid;
   }
 
-  _createClass(position, [{
+  (0, _createClass2["default"])(position, [{
     key: "getPos",
     value: function getPos() {
       return this.pos;
@@ -122,7 +119,6 @@ var position = /*#__PURE__*/function () {
       this.pos = pos;
     }
   }]);
-
   return position;
 }();
 
