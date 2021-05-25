@@ -8,42 +8,9 @@ var _express = _interopRequireDefault(require("express"));
 
 var dc = _interopRequireWildcard(require("discord.js"));
 
-var _avatar = _interopRequireDefault(require("./avatar"));
-
-var _db = _interopRequireDefault(require("../db.json"));
-
-var _fs = _interopRequireDefault(require("fs"));
-
-var _play = _interopRequireDefault(require("./play.js"));
-
-var _supabaseJs = require("@supabase/supabase-js");
-
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function _getRequireWildcardCache(nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || _typeof(obj) !== "object" && typeof obj !== "function") { return { "default": obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj["default"] = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
-
-require("dotenv").config();
-
-var supabaseUrl = 'https://hknnhacamqrcalaqobvh.supabase.co';
-var supabaseKey = process.env.SUPABASE_KEY;
-var supabase = (0, _supabaseJs.createClient)(supabaseUrl, supabaseKey);
-supabase.from("isBusy").select("*").eq("gid", "293847298234").then(function (d, e) {
-  console.log(d.data);
-});
-
-_db["default"].queue.push({
-  gid: "345345345345",
-  queue: [{
-    title: "anggep aja title",
-    link: "anggep aja link",
-    duration: "PT4M2S"
-  }]
-});
-
-_fs["default"].writeFile("../db.json", JSON.stringify(_db["default"]), function (e) {
-  if (e) throw e;
-  console.log("wrote");
-});
 
 var position = {}; // const play = (con, gi) => {
 //     const gid = `${gi}`
@@ -119,7 +86,34 @@ bot.on("message", function (msg) {
   }
 
   if (msg.content.toLowerCase().startsWith("via avatar") || msg.content.toLowerCase().startsWith("via av")) {
-    (0, _avatar["default"])(msg, bot);
+    try {
+      var cntm = msg.content.toLowerCase().split(" ");
+      cntm.shift();
+      cntm.shift();
+      var cnt = cntm.join(" ");
+
+      if (cnt === "via") {
+        msg.channel.send("Ngapain liat pp saya");
+        return 0;
+      }
+
+      console.log(cnt);
+      msg.guild.members.fetch({
+        query: cnt,
+        limit: 1
+      }).then(function (usr) {
+        var urlav = usr.array()[0].user.displayAvatarURL({
+          format: "jpg",
+          size: 4096
+        });
+        msg.channel.send({
+          files: [urlav]
+        });
+      })["catch"](console.error);
+    } catch (e) {
+      console.log(e);
+    }
+
     return;
   }
 
@@ -290,13 +284,19 @@ bot.on("message", function (msg) {
   });
 
   if (msg.content.toLowerCase().startsWith("via report")) {
-    var cnt = msg.content.toLowerCase().split(" "),
-        target = cnt[2];
-    cnt.shift();
-    cnt.shift();
-    cnt.shift();
+    var _cnt = msg.content.toLowerCase().split(" "),
+        target = _cnt[2];
+
+    _cnt.shift();
+
+    _cnt.shift();
+
+    _cnt.shift();
+
     var d = new Date();
-    var reportMsg = cnt.join(" ");
+
+    var reportMsg = _cnt.join(" ");
+
     var report = {
       reporter: msg.author.username,
       target: target,

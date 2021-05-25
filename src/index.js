@@ -1,37 +1,5 @@
-require("dotenv").config()
 import express from "express";
 import * as dc from "discord.js"
-import avatar from "./avatar"
-import db from "../db.json"
-import fs from "fs"
-import play from "./play.js"
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = 'https://hknnhacamqrcalaqobvh.supabase.co'
-const supabaseKey = process.env.SUPABASE_KEY
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-supabase
-.from("isBusy")
-.select("*")
-.eq("gid", "293847298234")
-.then((d, e)=>{
-    console.log(d.data)
-})
-
-db.queue.push({
-    gid:"345345345345", 
-    queue:[{
-        title:"anggep aja title",
-        link:"anggep aja link",
-        duration:"PT4M2S"
-    }]
-})
-
-fs.writeFile("../db.json", JSON.stringify(db), (e)=>{
-    if(e) throw e
-    console.log("wrote")
-})
 
 let position = {}
 // const play = (con, gi) => {
@@ -111,7 +79,26 @@ bot.on("message", (msg) => {
     }
 
     if (msg.content.toLowerCase().startsWith("via avatar") || msg.content.toLowerCase().startsWith("via av")) {
-        avatar(msg, bot)
+        try{
+            const cntm = msg.content.toLowerCase().split(" ")
+            cntm.shift()
+            cntm.shift()
+            const cnt = cntm.join(" ")
+            if(cnt === "via"){
+              msg.channel.send("Ngapain liat pp saya")
+              return 0
+            }
+            console.log(cnt)
+            msg.guild.members.fetch({ query: cnt, limit: 1 })
+            .then((usr)=>{
+                const urlav = usr.array()[0].user.displayAvatarURL({format:"jpg", size:4096})
+                msg.channel.send({files:[urlav]})
+            })
+            .catch(console.error);
+          }
+        catch(e){
+            console.log(e)
+        }
         return
     }
     if (msg.content.toLowerCase().startsWith("via nowplaying") || msg.content.toLowerCase().startsWith("via np")) {

@@ -2,22 +2,11 @@
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports["default"] = void 0;
-
-var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
-
-var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
-
 var _nodeFetch = _interopRequireDefault(require("node-fetch"));
 
 var _ytdlCore = _interopRequireDefault(require("ytdl-core"));
 
 var _googleapis = require("googleapis");
-
-var _supabaseJs = require("@supabase/supabase-js");
 
 require("dotenv").config();
 
@@ -61,209 +50,154 @@ var isoToDate = function isoToDate(duration) {
   return seconds;
 };
 
-var supabaseUrl = 'https://hknnhacamqrcalaqobvh.supabase.co';
-var supabaseKey = process.env.SUPABASE_KEY;
-var supabase = (0, _supabaseJs.createClient)(supabaseUrl, supabaseKey);
-
 var yt = _googleapis.google.youtube({
   version: 'v3',
   auth: "AIzaSyBtugmskNppTMOpcd9sCtScsMIYGBGmzqM"
-});
-
-var play = function play(gid, vc) {
-  supabase.from("queues").select("*").eq("gid", gid).then(function (res) {
-    var data;
-
-    try {
-      data = JSON.parse(res.data[0].queue);
-    } catch (e) {
-      console.log(e);
-      console.log(res);
-    }
-
-    supabase.from("positions").select("*").eq("gid", gid).then(function (res) {
-      var pos = res.data[0].pos;
-      var duration = data[pos].duration;
-      var sec = isoToDate(duration);
-      vc.play((0, _ytdlCore["default"])(data[pos].vlink));
-      setTimeout(function () {
-        supabase.from("positions").update({
-          pos: pos + 1
-        }).eq("gid", gid).then(function (data) {
-          play(gid, vc);
-        });
-      }, sec * 1000);
-    });
-  })["catch"](function (e) {});
-};
-
-var _default = /*#__PURE__*/function () {
-  var _ref = (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee2(msg) {
-    var connection, holder, isfirst, title, queue, _yield$supabase$from$, data, err, authid, u;
-
-    return _regenerator["default"].wrap(function _callee2$(_context2) {
-      while (1) {
-        switch (_context2.prev = _context2.next) {
-          case 0:
-            holder = msg.content.split(" ");
-            holder.shift();
-            holder.shift();
-            title = holder.join(" ");
-
-            if (!(title === "" || title == undefined)) {
-              _context2.next = 6;
-              break;
-            }
-
-            return _context2.abrupt("return", 0);
-
-          case 6:
-            queue = [];
-            _context2.next = 9;
-            return supabase.from("queues").select("*").eq("gid", msg.guild.id);
-
-          case 9:
-            _yield$supabase$from$ = _context2.sent;
-            data = _yield$supabase$from$.data;
-            err = _yield$supabase$from$.err;
-            if (err) console.err(err);
-
-            if (data.length !== 0) {
-              try {
-                queue = JSON.parse(data[0].queue);
-              } catch (e) {
-                console.log(e);
-              }
-            } else {
-              supabase.from("queues").insert([{
-                gid: msg.guild.id,
-                queue: JSON.stringify([])
-              }]).then(function (data, err) {
-                if (err) console.err(err);
-              });
-            }
-
-            if (!(msg.guild.voice !== undefined && msg.guild.voice.connection !== undefined && msg.guild.voice.connection !== null)) {
-              _context2.next = 19;
-              break;
-            }
-
-            connection = msg.guild.voice.connection;
-            isfirst = false;
-            _context2.next = 27;
-            break;
-
-          case 19:
-            authid = msg.author.id;
-            _context2.next = 22;
-            return msg.guild.members.fetch(authid);
-
-          case 22:
-            u = _context2.sent;
-            _context2.next = 25;
-            return u.voice.channel.join();
-
-          case 25:
-            connection = _context2.sent;
-            isfirst = true;
-
-          case 27:
-            // const r = await search(title)
-            // const res = r.videos.slice(0,1)
-            yt.search.list({
-              part: "snippet",
-              q: title
-            }, function (err, res) {
-              if (err) console.log(err);
-              var link = "https://www.youtube.com/watch?v=" + res.data.items[0].id.videoId; // console.log(res.data.items)
-
-              (0, _nodeFetch["default"])("https://www.googleapis.com/youtube/v3/videos?id=".concat(res.data.items[0].id.videoId, "&part=contentDetails&key=AIzaSyBtugmskNppTMOpcd9sCtScsMIYGBGmzqM")).then(function (r) {
-                return r.json();
-              }).then(function (r) {
-                queue.push({
-                  vlink: link,
-                  duration: r.items[0].contentDetails.duration,
-                  title: res.data.items[0].snippet.title
-                });
-                supabase.from("queues").update({
-                  queue: JSON.stringify(queue)
-                }).eq("gid", msg.guild.id).then(function (data, err) {
-                  if (err) console.err(err);
-                });
-                supabase.from("positions").select("*").eq("gid", msg.guild.id).then(function (data, err) {
-                  (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee() {
-                    var pos;
-                    return _regenerator["default"].wrap(function _callee$(_context) {
-                      while (1) {
-                        switch (_context.prev = _context.next) {
-                          case 0:
-                            if (err) console.err(err);
-
-                            if (!(data.data.length == 0)) {
-                              _context.next = 7;
-                              break;
-                            }
-
-                            pos = 0;
-                            _context.next = 5;
-                            return supabase.from("positions").insert({
-                              gid: msg.guild.id,
-                              pos: 0
-                            }).then(function (data, err) {
-                              console.log("pos add");
-                              if (err) console.err(err);
-                            });
-
-                          case 5:
-                            _context.next = 9;
-                            break;
-
-                          case 7:
-                            _context.next = 9;
-                            return supabase.from("positions").select("*").eq("gid", msg.guild.id).then(function (data) {
-                              if (data.err) console.err(data.err);
-                              pos = data.data[0].pos;
-                            });
-
-                          case 9:
-                            if (isfirst || pos >= queue.length) {
-                              play(msg.guild.id, connection);
-                            } else {
-                              console.log(msg.guild.voice);
-                            }
-
-                          case 10:
-                          case "end":
-                            return _context.stop();
-                        }
-                      }
-                    }, _callee);
-                  }))();
-                });
-              });
-              connection.on("disconnect", function () {
-                console.log("voice dc");
-                supabase.from("positions")["delete"]().eq("gid", msg.guild.id).then(function (data, err) {
-                  if (err) console.err(err);
-                });
-                supabase.from("queues")["delete"]().eq("gid", msg.guild.id).then(function (data, err) {
-                  if (err) console.err(err);
-                });
-              }); // console.log(voiceCon)
-              // console.log(isBusy)
-            });
-
-          case 28:
-          case "end":
-            return _context2.stop();
-        }
-      }
-    }, _callee2);
-  }));
-
-  return function (_x) {
-    return _ref.apply(this, arguments);
-  };
-}();
-
-exports["default"] = _default;
+}); // const play = (gid, vc)=>{
+//     supabase
+//     .from("queues")
+//     .select("*")
+//     .eq("gid", gid)
+//     .then((res)=>{
+//         let data
+//         try{
+//             data = JSON.parse(res.data[0].queue)
+//         }catch(e){
+//             console.log(e)
+//             console.log(res)
+//         }
+//         supabase
+//         .from("positions")
+//         .select("*")
+//         .eq("gid", gid)
+//         .then((res)=>{
+//             const pos = res.data[0].pos
+//             const duration = data[pos].duration
+//             const sec = isoToDate(duration)
+//             vc.play(ytdl(data[pos].vlink))
+//             setTimeout(() => {
+//                 supabase.from("positions")
+//                 .update({pos:pos+1})
+//                 .eq("gid", gid)
+//                 .then((data)=>{
+//                     play(gid, vc)
+//                 })
+//             }, sec*1000);
+//         })
+//     })
+//     .catch(e=>{})
+// }
+// export default async (msg) => {
+//     let connection
+//     const holder = msg.content.split(" ")
+//     let isfirst
+//     holder.shift()
+//     holder.shift()
+//     const title = holder.join(" ")
+//     if (title === "" || title == undefined) {
+//         return 0
+//     }
+//     let queue = []
+//     const {data, err} = await supabase
+//     .from("queues")
+//     .select("*")
+//     .eq("gid", msg.guild.id)
+//     if(err) console.err(err)
+//     if(data.length !== 0){
+//         try{
+//             queue = JSON.parse(data[0].queue)
+//         }catch(e){console.log(e)}
+//     }
+//     else{
+//         supabase.from("queues").insert([{
+//             gid:msg.guild.id,
+//             queue:JSON.stringify([])
+//         }]).then((data, err)=>{
+//             if(err) console.err(err)
+//         })
+//     }
+//     if(msg.guild.voice !== undefined && msg.guild.voice.connection !== undefined && msg.guild.voice.connection !== null){
+//         connection = msg.guild.voice.connection
+//         isfirst = false
+//     }else{
+//         const authid = msg.author.id
+//         const u = await msg.guild.members.fetch(authid)
+//         connection = await u.voice.channel.join()
+//         isfirst = true
+//     }
+//     // const r = await search(title)
+//     // const res = r.videos.slice(0,1)
+//     yt.search.list({
+//         part: "snippet",
+//         q: title
+//     }, (err, res) => {
+//         if (err) console.log(err)
+//         const link = "https://www.youtube.com/watch?v=" + res.data.items[0].id.videoId
+//         // console.log(res.data.items)
+//         fetch(`https://www.googleapis.com/youtube/v3/videos?id=${res.data.items[0].id.videoId}&part=contentDetails&key=AIzaSyBtugmskNppTMOpcd9sCtScsMIYGBGmzqM`)
+//             .then((r) => r.json())
+//             .then(r => {
+//                 queue.push({
+//                     vlink: link,
+//                     duration: r.items[0].contentDetails.duration,
+//                     title: res.data.items[0].snippet.title
+//                 })
+//                 supabase
+//                 .from("queues")
+//                 .update({queue:JSON.stringify(queue)})
+//                 .eq("gid", msg.guild.id)
+//                 .then((data, err)=>{
+//                     if(err) console.err(err)
+//                 })
+//                 supabase
+//                 .from("positions")
+//                 .select("*")
+//                 .eq("gid", msg.guild.id)
+//                 .then((data, err)=>{
+//                     (async()=>{
+//                         if(err) console.err(err)
+//                         let pos
+//                         if(data.data.length == 0){
+//                             pos = 0
+//                             await supabase.from("positions")
+//                             .insert({gid:msg.guild.id, pos:0})
+//                             .then((data, err)=>{
+//                                 console.log("pos add")
+//                                 if (err) console.err(err)
+//                             })
+//                         }else{
+//                             await supabase.from("positions")
+//                             .select("*")
+//                             .eq("gid", msg.guild.id)
+//                             .then((data)=>{
+//                                 if(data.err) console.err(data.err)
+//                                 pos = data.data[0].pos
+//                             })
+//                         }
+//                         if(isfirst || pos >= queue.length){
+//                             play(msg.guild.id, connection)
+//                         }else{
+//                             console.log(msg.guild.voice)
+//                         }
+//                     })()
+//                 })
+//             })
+//         connection.on("disconnect", () => {
+//             console.log("voice dc")
+//             supabase.from("positions")
+//             .delete()
+//             .eq("gid", msg.guild.id)
+//             .then((data, err)=>{
+//                 if(err) console.err(err)
+//             })
+//             supabase.from("queues")
+//             .delete()
+//             .eq("gid", msg.guild.id)
+//             .then((data, err)=>{
+//                 if(err) console.err(err)
+//             })
+//         })
+//         // console.log(voiceCon)
+//         // console.log(isBusy)
+//     })
+// }

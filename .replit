@@ -1,0 +1,1 @@
+run = "~/catfish-sushi/node/bin/node ~/catfish-sushi/dist/index.js"
