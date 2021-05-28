@@ -1,5 +1,11 @@
+require("dotenv").config()
 import express from "express";
 import * as dc from "discord.js"
+import ws from "ws"
+import http from "http"
+
+let PlaylistRegex = /^((?:https?:)\/\/)?((?:www|m)\.)?((?:youtube\.com)).*(youtu.be\/|list=)([^#&?]*).*/;
+let SpotifyPlaylistRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:(album|playlist)\/|\?uri=spotify:playlist:)((\w|-){22})(?:(?=\?)(?:[?&]foo=(\d*)(?=[&#]|$)|(?![?&]foo=)[^#])+)?(?=#|$)/;
 
 let position = {}
 // const play = (con, gi) => {
@@ -17,6 +23,8 @@ let isBusy = {}
 let voiceCon = {}
 let hour = 0
 let memberJoin = 0
+let wscon
+let bumpcount
 
 const settings = {
     autoKick: false
@@ -30,8 +38,35 @@ const admins = [
 ]
 
 app.get('/', (req, res) => res.send('Hello World!'));
+app.get("/getbump", (r, q)=>{
+    q.send(JSON.stringify(bumpcount))
+})
 
-app.listen(port, () => console.log(`listening at http://localhost:${port}`));
+
+const server = http.createServer(app);
+server.listen(port, () => {
+    console.log(`Server started on port ${server.address().port} :)`);
+});
+
+const wss = new ws.Server({ server })
+wss.on('connection', (ws) => {
+    console.log("websocket connected")
+    ws.send("helo, im underwater")
+    ws.on('message', (msg) => {
+        console.log(msg)
+        try {
+            const data = JSON.parse(msg)
+            if (data.token === "onii-chan hentai") {
+                wscon = ws
+            } else {
+                ws.send("401 Unauthorized")
+            }
+        } catch (e) {
+            ws.send("401 Unauthorized")
+        }
+        console.log('received: %s', msg);
+    })
+});
 const bot = new dc.Client({ ws: { intents: new dc.Intents(dc.Intents.ALL) } });
 
 
@@ -39,11 +74,12 @@ const { Player } = require("discord-music-player");
 const player = new Player(bot, {
     leaveOnEmpty: true,
     leaveOnStop: true,
-    timeout:300000,
+    timeout: 300000,
 
 });
 
 let reports = []
+
 let fakeIsBusy = false
 const token = process.env['TOKEN'] || ""
 console.log(token)
@@ -54,6 +90,7 @@ bot.on("ready", () => {
 })
 bot.on("message", (msg) => {
     console.log(msg.content)
+    wscon?.send(JSON.stringify({ ...msg }))
     // if(msg.content.toLowerCase().startsWith("via test join")){
     //     msg.member.voice.channel.join()
     //     return
@@ -64,56 +101,56 @@ bot.on("message", (msg) => {
     // }
     if (msg.content.toLowerCase().startsWith("via help")) {
         msg.channel.send({
-            embed:{
+            embed: {
                 "title": "Command List",
                 "description": "**Via Avatar**\n\nGet user avatar\nusage: `via avatar {user}`\nalias: `av`\n\n\n**Via Play**\n\nPlay a song, unavailable if you're not in a voice channel.\nusage: `via play {song title}`\nalias: `p`\n\n**Via NowPlaying**\n\nGet now playing song, unavailable if you're not in a voice channel.\nusage: `via nowplaying`\nalias: `np`\n\n**Via Skip**\nSkip the currently playing song.\nusage: `via skip`\nalias:\n\n**Via Remove**\nRemove a song in the queue.\nusage: `via remove {song number}`\nalias: `rm`\n\n**Via Queue**\nGet queue.\nusage: `via queue`\nalias: `q`\n\n**Via Loop**\nLoop current song/queue.\nusage: `via loop`\n   `via loopqueue`\n\n**Via Stop**\nDisconnect from a voice channel.\nusage: `via stop`\nalias: `dc`",
                 "author": {
-                  "name": "Via",
-                  "icon_url": "https://cdn.discordapp.com/attachments/793814695319437326/846632751254994984/index.jpg"
+                    "name": "Via",
+                    "icon_url": "https://cdn.discordapp.com/attachments/793814695319437326/846632751254994984/index.jpg"
                 },
                 "color": 16223655
-                
+
             }
         })
         return
     }
-
+    
     if (msg.content.toLowerCase().startsWith("via avatar") || msg.content.toLowerCase().startsWith("via av")) {
-        try{
+        try {
             const cntm = msg.content.toLowerCase().split(" ")
             cntm.shift()
             cntm.shift()
             const cnt = cntm.join(" ")
-            if(cnt === "via"){
-              msg.channel.send("Ngapain liat pp saya")
-              return 0
+            if (cnt === "via") {
+                msg.channel.send("Ngapain liat pp saya")
+                return 0
             }
             console.log(cnt)
             msg.guild.members.fetch({ query: cnt, limit: 1 })
-            .then((usr)=>{
-                const urlav = usr.array()[0].user.displayAvatarURL({format:"jpg", size:4096})
-                msg.channel.send({files:[urlav]})
-            })
-            .catch(console.error);
-          }
-        catch(e){
+                .then((usr) => {
+                    const urlav = usr.array()[0].user.displayAvatarURL({ format: "jpg", size: 4096 })
+                    msg.channel.send({ files: [urlav] })
+                })
+                .catch(console.error);
+        }
+        catch (e) {
             console.log(e)
         }
         return
     }
     if (msg.content.toLowerCase().startsWith("via nowplaying") || msg.content.toLowerCase().startsWith("via np")) {
-        player.nowPlaying(msg).then(song=>{
-            if(song)
+        player.nowPlaying(msg).then(song => {
+            if (song)
                 msg.channel.send({
-                    embed:{
+                    embed: {
                         "title": "Now Playing",
-                        "description": "```\n"+song.name+"\n"+player.createProgressBar(msg, {
+                        "description": "```\n" + song.name + "\n" + player.createProgressBar(msg, {
                             size: 15,
                             block: '=',
                             arrow: '>'
-                        })+"```",
+                        }) + "```",
                         "color": 16223655
-                      }
+                    }
                 });
         })
         return
@@ -123,21 +160,21 @@ bot.on("message", (msg) => {
         arr.shift()
         arr.shift()
         const suffix = arr.join(" ")
-        if(player.isPlaying(msg)){
+        if (player.isPlaying(msg)) {
             player.addToQueue(msg, {
                 search: suffix,
                 requestedBy: msg.author.tag
-            }).then((song)=>{
-                if(song){
+            }).then((song) => {
+                if (song) {
                     msg.channel.send(`${song.name} added to queue`)
                 }
             })
-        }else{
+        } else {
             player.play(msg, {
                 search: suffix,
                 requestedBy: msg.author.tag
-            }).then((song)=>{
-                if(song){
+            }).then((song) => {
+                if (song) {
                     msg.channel.send(`Playing ${song.name}`)
                 }
             })
@@ -145,61 +182,61 @@ bot.on("message", (msg) => {
 
         return
     }
-    if(msg.content.toLowerCase().startsWith("via skip")){
+    if (msg.content.toLowerCase().startsWith("via skip")) {
         const song = player.skip(msg)
-        if(song){
+        if (song) {
             msg.channel.send(`${song.name} was skipped`)
         }
         return
     }
-    if(msg.content.toLowerCase().startsWith("via remove") || msg.content.toLowerCase().startsWith("via rm")){
+    if (msg.content.toLowerCase().startsWith("via remove") || msg.content.toLowerCase().startsWith("via rm")) {
         const arr = msg.content.split(" ")
         arr.shift()
         arr.shift()
-        if(!isNaN(parseInt(arr.join("")))){
-            const song = player.remove(msg, parseInt(arr.join(""))-1)
-            if(song){
+        if (!isNaN(parseInt(arr.join("")))) {
+            const song = player.remove(msg, parseInt(arr.join("")) - 1)
+            if (song) {
                 msg.channel.send(`Removed song ${song.name} from queue`)
             }
 
         }
         return
     }
-    if(msg.content.toLowerCase().startsWith("via stop") || msg.content.toLowerCase().startsWith("via dc")){
-        if(player.stop(msg)){
+    if (msg.content.toLowerCase().startsWith("via stop") || msg.content.toLowerCase().startsWith("via dc")) {
+        if (player.stop(msg)) {
             msg.channel.send("Ok")
         }
         return
     }
-    if(msg.content.toLowerCase().startsWith("via loopqueue")){
+    if (msg.content.toLowerCase().startsWith("via loopqueue")) {
         let toggle = player.toggleQueueLoop(msg);
-        
-        if(toggle === null)
+
+        if (toggle === null)
             return;
         else if (toggle)
             msg.channel.send('Queue Loop On');
         else msg.channel.send('Queue Loop Off');
         return
     }
-    if(msg.content.toLowerCase().startsWith("via loop")){
+    if (msg.content.toLowerCase().startsWith("via loop")) {
         let toggle = player.toggleLoop(msg);
-        
-        if(toggle === null)
+
+        if (toggle === null)
             return;
         else if (toggle)
             msg.channel.send('Loop On');
         else msg.channel.send('Loop Off');
         return
     }
-    if(msg.content.toLowerCase().startsWith("via queue")||msg.content.toLowerCase().startsWith("via q")){
+    if (msg.content.toLowerCase().startsWith("via queue") || msg.content.toLowerCase().startsWith("via q")) {
         const queue = player.getQueue(msg)
-        if(queue){
+        if (queue) {
             msg.channel.send({
-                embed:{
+                embed: {
                     "title": "Song Queue",
-                    "description": `\`\`\`${(queue.songs.map((q, index)=>(`${index+1}. ${q.name}`))).join("\n")}\`\`\``,
+                    "description": `\`\`\`${(queue.songs.map((q, index) => (`${index + 1}. ${q.name}`))).join("\n")}\`\`\``,
                     "color": 16223655
-                  }
+                }
             })
         }
         return
@@ -207,6 +244,53 @@ bot.on("message", (msg) => {
 
     admins.forEach(id => {
         if (msg.author.id === id) {
+            if (msg.content.toLowerCase().startsWith("via countbump")) {
+                if(msg.author.bot){
+                    return
+                }
+                let isfound = false;
+                (async ()=>{
+                    const msgs = await msg.channel.messages.fetch({limit:100})
+                    let ids = []
+                    msgs.map((msgg, ind)=>{
+                        if(isfound){
+                            return
+                        }
+                        if(msgg.content.startsWith("?give")){
+                            isfound = true
+                            return
+                        }
+                        console.log(msgg.content)
+                        if(msgg.embeds.length !== 0){
+                            if(msgg.embeds[0].color === 2406327){
+                                try{
+                                    const des = msgg.embeds[0].description
+                                    let tag = des.split("<@").join("").split(">")[0]
+                                    console.log(tag)
+                                    ids.push(tag)
+        
+                                    
+                                }catch(e){}
+                            }
+                        }
+                    })
+                    function getOccurrence(array, value) {
+                        return array.filter((v) => (v === value)).length;
+                    }
+                    let unique = [...new Set(ids)]
+                    let data = {}
+                    unique.forEach(id=>{
+                        if(isNaN(parseInt(id))){
+                            return
+                        }
+                        data[id] = getOccurrence(ids, id)
+                    })
+                    console.log(data)
+                    bumpcount = data
+                    msg.channel.send(JSON.stringify(data, null, 4))
+                    wscon?.send(JSON.stringify(data))
+                })()
+            }
             if (msg.content.toLowerCase().startsWith("%")) {
                 let arr = msg.content.split("%")
                 arr.shift()
@@ -227,7 +311,7 @@ bot.on("message", (msg) => {
                         c.send(text)
                     });
                 } catch (e) { console.log(e) }
-                
+
             }
             else if (msg.content.toLowerCase().startsWith("via spam")) {
                 try {

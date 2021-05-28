@@ -15,6 +15,7 @@
     "node": "^16.1.0",
     "node-fetch": "^2.6.1",
     "opusscript": "^0.0.8",
+    "ws": "^7.4.6",
     "yt-search": "^2.8.0",
     "ytdl-core": "^4.8.0"
   },
@@ -33,6 +34,7 @@
   "scripts": {
     "compile": "babel src --out-dir dist",
     "start": "node dist/index.js",
-    "serve": "babel src --out-dir dist&&node dist/index.js"
+    "serve": "babel src --out-dir dist&&node dist/index.js",
+    "deploy": "yarn compile&&~/catfish-sushi/node/bin/node ~/catfish-sushi/dist/index.js"
   }
 }

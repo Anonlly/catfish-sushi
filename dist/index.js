@@ -4,14 +4,34 @@ var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefau
 
 var _typeof = require("@babel/runtime/helpers/typeof");
 
+var _regenerator = _interopRequireDefault(require("@babel/runtime/regenerator"));
+
+var _toConsumableArray2 = _interopRequireDefault(require("@babel/runtime/helpers/toConsumableArray"));
+
+var _asyncToGenerator2 = _interopRequireDefault(require("@babel/runtime/helpers/asyncToGenerator"));
+
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
+
 var _express = _interopRequireDefault(require("express"));
 
 var dc = _interopRequireWildcard(require("discord.js"));
+
+var _ws = _interopRequireDefault(require("ws"));
+
+var _http = _interopRequireDefault(require("http"));
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function _getRequireWildcardCache(nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || _typeof(obj) !== "object" && typeof obj !== "function") { return { "default": obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj["default"] = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) { symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); } keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { (0, _defineProperty2["default"])(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+require("dotenv").config();
+
+var PlaylistRegex = /^((?:https?:)\/\/)?((?:www|m)\.)?((?:youtube\.com)).*(youtu.be\/|list=)([^#&?]*).*/;
+var SpotifyPlaylistRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:(album|playlist)\/|\?uri=spotify:playlist:)((\w|-){22})(?:(?=\?)(?:[?&]foo=(\d*)(?=[&#]|$)|(?![?&]foo=)[^#])+)?(?=#|$)/;
 var position = {}; // const play = (con, gi) => {
 //     const gid = `${gi}`
 //     console.log(position)
@@ -28,6 +48,8 @@ var isBusy = {};
 var voiceCon = {};
 var hour = 0;
 var memberJoin = 0;
+var wscon;
+var bumpcount;
 var settings = {
   autoKick: false
 };
@@ -35,8 +57,38 @@ var admins = ["743033649561206795", "472019006409146370", "202356156922855424", 
 app.get('/', function (req, res) {
   return res.send('Hello World!');
 });
-app.listen(port, function () {
-  return console.log("listening at http://localhost:".concat(port));
+app.get("/getbump", function (r, q) {
+  q.send(JSON.stringify(bumpcount));
+});
+
+var server = _http["default"].createServer(app);
+
+server.listen(port, function () {
+  console.log("Server started on port ".concat(server.address().port, " :)"));
+});
+var wss = new _ws["default"].Server({
+  server: server
+});
+wss.on('connection', function (ws) {
+  console.log("websocket connected");
+  ws.send("helo, im underwater");
+  ws.on('message', function (msg) {
+    console.log(msg);
+
+    try {
+      var data = JSON.parse(msg);
+
+      if (data.token === "onii-chan hentai") {
+        wscon = ws;
+      } else {
+        ws.send("401 Unauthorized");
+      }
+    } catch (e) {
+      ws.send("401 Unauthorized");
+    }
+
+    console.log('received: %s', msg);
+  });
 });
 var bot = new dc.Client({
   ws: {
@@ -62,7 +114,10 @@ bot.on("ready", function () {
   bot.user.setActivity("Your Heart");
 });
 bot.on("message", function (msg) {
-  console.log(msg.content); // if(msg.content.toLowerCase().startsWith("via test join")){
+  var _wscon;
+
+  console.log(msg.content);
+  (_wscon = wscon) === null || _wscon === void 0 ? void 0 : _wscon.send(JSON.stringify(_objectSpread({}, msg))); // if(msg.content.toLowerCase().startsWith("via test join")){
   //     msg.member.voice.channel.join()
   //     return
   // }
@@ -232,6 +287,80 @@ bot.on("message", function (msg) {
 
   admins.forEach(function (id) {
     if (msg.author.id === id) {
+      if (msg.content.toLowerCase().startsWith("via countbump")) {
+        if (msg.author.bot) {
+          return;
+        }
+
+        var isfound = false;
+        (0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee() {
+          var _wscon2;
+
+          var msgs, ids, getOccurrence, unique, data;
+          return _regenerator["default"].wrap(function _callee$(_context) {
+            while (1) {
+              switch (_context.prev = _context.next) {
+                case 0:
+                  getOccurrence = function _getOccurrence(array, value) {
+                    return array.filter(function (v) {
+                      return v === value;
+                    }).length;
+                  };
+
+                  _context.next = 3;
+                  return msg.channel.messages.fetch({
+                    limit: 100
+                  });
+
+                case 3:
+                  msgs = _context.sent;
+                  ids = [];
+                  msgs.map(function (msgg, ind) {
+                    if (isfound) {
+                      return;
+                    }
+
+                    if (msgg.content.startsWith("?give")) {
+                      isfound = true;
+                      return;
+                    }
+
+                    console.log(msgg.content);
+
+                    if (msgg.embeds.length !== 0) {
+                      if (msgg.embeds[0].color === 2406327) {
+                        try {
+                          var des = msgg.embeds[0].description;
+                          var tag = des.split("<@").join("").split(">")[0];
+                          console.log(tag);
+                          ids.push(tag);
+                        } catch (e) {}
+                      }
+                    }
+                  });
+                  unique = (0, _toConsumableArray2["default"])(new Set(ids));
+                  data = {};
+                  unique.forEach(function (id) {
+                    if (isNaN(parseInt(id))) {
+                      return;
+                    }
+
+                    data[id] = getOccurrence(ids, id);
+                  });
+                  console.log(data);
+                  bumpcount = data;
+                  msg.channel.send(JSON.stringify(data, null, 4));
+                  (_wscon2 = wscon) === null || _wscon2 === void 0 ? void 0 : _wscon2.send(JSON.stringify(data));
+
+                case 13:
+                case "end":
+                  return _context.stop();
+              }
+            }
+          }, _callee);
+        }))();
+      }
+
       if (msg.content.toLowerCase().startsWith("%")) {
         var _arr2 = msg.content.split("%");
 
