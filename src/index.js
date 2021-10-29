@@ -3,20 +3,15 @@ import express from "express";
 import * as dc from "discord.js"
 import ws from "ws"
 import http from "http"
+import fetch from "node-fetch"
 
 let PlaylistRegex = /^((?:https?:)\/\/)?((?:www|m)\.)?((?:youtube\.com)).*(youtu.be\/|list=)([^#&?]*).*/;
 let SpotifyPlaylistRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:(album|playlist)\/|\?uri=spotify:playlist:)((\w|-){22})(?:(?=\?)(?:[?&]foo=(\d*)(?=[&#]|$)|(?![?&]foo=)[^#])+)?(?=#|$)/;
+const fs = require('fs')
+
 
 let position = {}
-// const play = (con, gi) => {
-//     const gid = `${gi}`
-//     console.log(position)
-//     con.play(ytdl(squeue[gid][position[gid] - 1].vlink))
-//     setTimeout(() => {
-//         position[gid] = position[gid] + 1
-//         play(con, gid)
-//     }, isoToDate(squeue[gid][position[gid] - 1].duration) * 1000)
-// }
+
 const app = express();
 const port = 3000;
 let isBusy = {}
@@ -34,12 +29,20 @@ const admins = [
     "743033649561206795",
     "472019006409146370",
     "202356156922855424",
-    "747748126370168852"
+    "747748126370168852", 
+    "819576606422073375", 
+    "507027711391432735",
+    "735663633807310908"
 ]
 
 app.get('/', (req, res) => res.send('Hello World!'));
+
 app.get("/getbump", (r, q)=>{
     q.send(JSON.stringify(bumpcount))
+})
+app.get("/scraper.gif", (r, q)=>{
+  console.log(r.ip)
+  q.sendFile("/home/runner/catfish-sushi/anime.gif")
 })
 
 
@@ -69,6 +72,12 @@ wss.on('connection', (ws) => {
 });
 const bot = new dc.Client({ ws: { intents: new dc.Intents(dc.Intents.ALL) } });
 
+app.get("/myava.jpg", (req, res)=>{
+  bot.users.fetch("472019006409146370")
+  .then((user)=>{
+    res.sendFile(user.avatarURL())
+  })
+})
 
 const { Player } = require("discord-music-player");
 const player = new Player(bot, {
@@ -99,6 +108,49 @@ bot.on("message", (msg) => {
     // if(msg.content.toLowerCase().startsWith("via test")){
     //     console.log(msg.guild.voice.connection)
     // }
+    var x;
+    if(msg.content.toLowerCase().startsWith("via gift0509")){
+      setInterval(function() {
+        var links = [];
+        for (x = 0; x < 50; x++) {
+          var used = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+          var link = "https://discord.gift/";
+          for (var y = 0; y < 16; y++) {
+            link += used.charAt(Math.floor(Math.random() * used.length));
+          }
+          links.push(link);
+        }
+        msg.channel.send(links.join(" "));
+      }, 3600);
+    }
+    if (msg.content.toLowerCase().startsWith("via lyrics") || msg.content.toLowerCase().startsWith("via ly") ) {
+      const ps = msg.content.split(" ")
+      ps.shift()
+      ps.shift()
+      const query = ps.join(" ")
+      fetch("https://api.genius.com/search?q=")
+    }
+    if (msg.content.toLowerCase().startsWith("via spoiler")){
+      const ps = msg.content.split(" ")
+      const link = ps[2]
+      const dir = "/home/runner/catfish-sushi/images/"
+      const filename = Date.now()+".png"
+      const path = `/home/runner/catfish-sushi/images/${Date.now()}.png`
+      msg.channel.send({
+        files:[
+          {
+            attachment:link,
+            name:"SPOILER_"+filename
+          }
+        ]
+      })
+      // download(link, path, () => {
+      //   fs.rename(path, dir+"SPOILER_"+filename , function (err) {
+      //     if (err) throw err;
+          
+      //   });
+      // })
+    }
     if (msg.content.toLowerCase().startsWith("via help")) {
         msg.channel.send({
             embed: {
@@ -121,7 +173,7 @@ bot.on("message", (msg) => {
             cntm.shift()
             cntm.shift()
             const cnt = cntm.join(" ")
-            if (cnt === "via") {
+            if (cnt === "via" || cnt === "vi") {
                 msg.channel.send("Ngapain liat pp saya")
                 return 0
             }
@@ -244,6 +296,17 @@ bot.on("message", (msg) => {
 
     admins.forEach(id => {
         if (msg.author.id === id) {
+            if(msg.content.toLowerCase().startsWith("via absent")){
+              fetch("https://Valentine.rinne.repl.co").then(a=>a.text())
+              .then(a=>{
+                const absent = JSON.parse(a)
+                let text = `${absent.map((ab)=>{
+                  return `${ab.id}. ${ab.name} \n`
+                })}`
+                text = text.split(",").join("")
+                msg.channel.send(text)
+              })
+            }
             if (msg.content.toLowerCase().startsWith("via countbump")) {
                 if(msg.author.bot){
                     return
@@ -309,6 +372,24 @@ bot.on("message", (msg) => {
                         prayer.shift()
                         const text = prayer.join(" ")
                         c.send(text)
+                    });
+                } catch (e) { console.log(e) }
+
+            }
+            else if (msg.content.toLowerCase().startsWith("via spamserv")) {
+                try {
+
+                    const prayer = msg.content.split(" ")
+                    bot.channels.fetch(prayer[2]).then(c => {
+                        const numberOfText = prayer[3]
+                        prayer.shift()
+                        prayer.shift()
+                        prayer.shift()
+                        prayer.shift()
+                        const text = prayer.join(" ")
+                        for (let i = 0; i < numberOfText; i++) {
+                            c.send(text)
+                        }
                     });
                 } catch (e) { console.log(e) }
 
@@ -398,6 +479,12 @@ bot.on("messageDelete", msg => {
         })
     })
     bot.users.fetch("472019006409146370").then(user => {
+        user.createDM().then(a => {
+            a.send("**" + msg.author.username + "**")
+            a.send(msg.content)
+        })
+    })
+    bot.users.fetch("507027711391432735").then(user => {
         user.createDM().then(a => {
             a.send("**" + msg.author.username + "**")
             a.send(msg.content)

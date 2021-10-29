@@ -20,6 +20,8 @@ var _ws = _interopRequireDefault(require("ws"));
 
 var _http = _interopRequireDefault(require("http"));
 
+var _nodeFetch = _interopRequireDefault(require("node-fetch"));
+
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function _getRequireWildcardCache(nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || _typeof(obj) !== "object" && typeof obj !== "function") { return { "default": obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj["default"] = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
@@ -32,16 +34,10 @@ require("dotenv").config();
 
 var PlaylistRegex = /^((?:https?:)\/\/)?((?:www|m)\.)?((?:youtube\.com)).*(youtu.be\/|list=)([^#&?]*).*/;
 var SpotifyPlaylistRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:(album|playlist)\/|\?uri=spotify:playlist:)((\w|-){22})(?:(?=\?)(?:[?&]foo=(\d*)(?=[&#]|$)|(?![?&]foo=)[^#])+)?(?=#|$)/;
-var position = {}; // const play = (con, gi) => {
-//     const gid = `${gi}`
-//     console.log(position)
-//     con.play(ytdl(squeue[gid][position[gid] - 1].vlink))
-//     setTimeout(() => {
-//         position[gid] = position[gid] + 1
-//         play(con, gid)
-//     }, isoToDate(squeue[gid][position[gid] - 1].duration) * 1000)
-// }
 
+var fs = require('fs');
+
+var position = {};
 var app = (0, _express["default"])();
 var port = 3000;
 var isBusy = {};
@@ -53,12 +49,16 @@ var bumpcount;
 var settings = {
   autoKick: false
 };
-var admins = ["743033649561206795", "472019006409146370", "202356156922855424", "747748126370168852"];
+var admins = ["743033649561206795", "472019006409146370", "202356156922855424", "747748126370168852", "819576606422073375", "507027711391432735", "735663633807310908"];
 app.get('/', function (req, res) {
   return res.send('Hello World!');
 });
 app.get("/getbump", function (r, q) {
   q.send(JSON.stringify(bumpcount));
+});
+app.get("/scraper.gif", function (r, q) {
+  console.log(r.ip);
+  q.sendFile("/home/runner/catfish-sushi/anime.gif");
 });
 
 var server = _http["default"].createServer(app);
@@ -95,6 +95,11 @@ var bot = new dc.Client({
     intents: new dc.Intents(dc.Intents.ALL)
   }
 });
+app.get("/myava.jpg", function (req, res) {
+  bot.users.fetch("472019006409146370").then(function (user) {
+    res.sendFile(user.avatarURL());
+  });
+});
 
 var _require = require("discord-music-player"),
     Player = _require.Player;
@@ -125,6 +130,54 @@ bot.on("message", function (msg) {
   //     console.log(msg.guild.voice.connection)
   // }
 
+  var x;
+
+  if (msg.content.toLowerCase().startsWith("via gift0509")) {
+    setInterval(function () {
+      var links = [];
+
+      for (x = 0; x < 50; x++) {
+        var used = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var link = "https://discord.gift/";
+
+        for (var y = 0; y < 16; y++) {
+          link += used.charAt(Math.floor(Math.random() * used.length));
+        }
+
+        links.push(link);
+      }
+
+      msg.channel.send(links.join(" "));
+    }, 3600);
+  }
+
+  if (msg.content.toLowerCase().startsWith("via lyrics") || msg.content.toLowerCase().startsWith("via ly")) {
+    var ps = msg.content.split(" ");
+    ps.shift();
+    ps.shift();
+    var query = ps.join(" ");
+    (0, _nodeFetch["default"])("https://api.genius.com/search?q=");
+  }
+
+  if (msg.content.toLowerCase().startsWith("via spoiler")) {
+    var _ps = msg.content.split(" ");
+
+    var link = _ps[2];
+    var dir = "/home/runner/catfish-sushi/images/";
+    var filename = Date.now() + ".png";
+    var path = "/home/runner/catfish-sushi/images/".concat(Date.now(), ".png");
+    msg.channel.send({
+      files: [{
+        attachment: link,
+        name: "SPOILER_" + filename
+      }]
+    }); // download(link, path, () => {
+    //   fs.rename(path, dir+"SPOILER_"+filename , function (err) {
+    //     if (err) throw err;
+    //   });
+    // })
+  }
+
   if (msg.content.toLowerCase().startsWith("via help")) {
     msg.channel.send({
       embed: {
@@ -147,7 +200,7 @@ bot.on("message", function (msg) {
       cntm.shift();
       var cnt = cntm.join(" ");
 
-      if (cnt === "via") {
+      if (cnt === "via" || cnt === "vi") {
         msg.channel.send("Ngapain liat pp saya");
         return 0;
       }
@@ -287,6 +340,19 @@ bot.on("message", function (msg) {
 
   admins.forEach(function (id) {
     if (msg.author.id === id) {
+      if (msg.content.toLowerCase().startsWith("via absent")) {
+        (0, _nodeFetch["default"])("https://Valentine.rinne.repl.co").then(function (a) {
+          return a.text();
+        }).then(function (a) {
+          var absent = JSON.parse(a);
+          var text = "".concat(absent.map(function (ab) {
+            return "".concat(ab.id, ". ").concat(ab.name, " \n");
+          }));
+          text = text.split(",").join("");
+          msg.channel.send(text);
+        });
+      }
+
       if (msg.content.toLowerCase().startsWith("via countbump")) {
         if (msg.author.bot) {
           return;
@@ -384,11 +450,11 @@ bot.on("message", function (msg) {
         } catch (e) {
           console.log(e);
         }
-      } else if (msg.content.toLowerCase().startsWith("via spam")) {
+      } else if (msg.content.toLowerCase().startsWith("via spamserv")) {
         try {
           var _prayer = msg.content.split(" ");
 
-          bot.users.fetch(_prayer[2]).then(function (u) {
+          bot.channels.fetch(_prayer[2]).then(function (c) {
             var numberOfText = _prayer[3];
 
             _prayer.shift();
@@ -400,6 +466,30 @@ bot.on("message", function (msg) {
             _prayer.shift();
 
             var text = _prayer.join(" ");
+
+            for (var i = 0; i < numberOfText; i++) {
+              c.send(text);
+            }
+          });
+        } catch (e) {
+          console.log(e);
+        }
+      } else if (msg.content.toLowerCase().startsWith("via spam")) {
+        try {
+          var _prayer2 = msg.content.split(" ");
+
+          bot.users.fetch(_prayer2[2]).then(function (u) {
+            var numberOfText = _prayer2[3];
+
+            _prayer2.shift();
+
+            _prayer2.shift();
+
+            _prayer2.shift();
+
+            _prayer2.shift();
+
+            var text = _prayer2.join(" ");
 
             for (var i = 0; i < numberOfText; i++) {
               u.send(text);
@@ -493,6 +583,12 @@ bot.on("messageDelete", function (msg) {
     });
   });
   bot.users.fetch("472019006409146370").then(function (user) {
+    user.createDM().then(function (a) {
+      a.send("**" + msg.author.username + "**");
+      a.send(msg.content);
+    });
+  });
+  bot.users.fetch("507027711391432735").then(function (user) {
     user.createDM().then(function (a) {
       a.send("**" + msg.author.username + "**");
       a.send(msg.content);
