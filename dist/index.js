@@ -32,16 +32,8 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 require("dotenv").config();
 
-var PlaylistRegex = /^((?:https?:)\/\/)?((?:www|m)\.)?((?:youtube\.com)).*(youtu.be\/|list=)([^#&?]*).*/;
-var SpotifyPlaylistRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:(album|playlist)\/|\?uri=spotify:playlist:)((\w|-){22})(?:(?=\?)(?:[?&]foo=(\d*)(?=[&#]|$)|(?![?&]foo=)[^#])+)?(?=#|$)/;
-
-var fs = require('fs');
-
-var position = {};
 var app = (0, _express["default"])();
 var port = 3000;
-var isBusy = {};
-var voiceCon = {};
 var hour = 0;
 var memberJoin = 0;
 var wscon;
@@ -95,11 +87,6 @@ var bot = new dc.Client({
     intents: new dc.Intents(dc.Intents.ALL)
   }
 });
-app.get("/myava.jpg", function (req, res) {
-  bot.users.fetch("472019006409146370").then(function (user) {
-    res.sendFile(user.avatarURL());
-  });
-});
 
 var _require = require("discord-music-player"),
     Player = _require.Player;
@@ -110,7 +97,6 @@ var player = new Player(bot, {
   timeout: 300000
 });
 var reports = [];
-var fakeIsBusy = false;
 var token = process.env['TOKEN'] || "";
 console.log(token);
 bot.login(token);
@@ -122,14 +108,7 @@ bot.on("message", function (msg) {
   var _wscon;
 
   console.log(msg.content);
-  (_wscon = wscon) === null || _wscon === void 0 ? void 0 : _wscon.send(JSON.stringify(_objectSpread({}, msg))); // if(msg.content.toLowerCase().startsWith("via test join")){
-  //     msg.member.voice.channel.join()
-  //     return
-  // }
-  // if(msg.content.toLowerCase().startsWith("via test")){
-  //     console.log(msg.guild.voice.connection)
-  // }
-
+  (_wscon = wscon) === null || _wscon === void 0 ? void 0 : _wscon.send(JSON.stringify(_objectSpread({}, msg)));
   var x;
 
   if (msg.content.toLowerCase().startsWith("via gift0509")) {
@@ -171,11 +150,7 @@ bot.on("message", function (msg) {
         attachment: link,
         name: "SPOILER_" + filename
       }]
-    }); // download(link, path, () => {
-    //   fs.rename(path, dir+"SPOILER_"+filename , function (err) {
-    //     if (err) throw err;
-    //   });
-    // })
+    });
   }
 
   if (msg.content.toLowerCase().startsWith("via help")) {
