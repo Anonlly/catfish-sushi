@@ -5,17 +5,8 @@ import ws from "ws"
 import http from "http"
 import fetch from "node-fetch"
 
-let PlaylistRegex = /^((?:https?:)\/\/)?((?:www|m)\.)?((?:youtube\.com)).*(youtu.be\/|list=)([^#&?]*).*/;
-let SpotifyPlaylistRegex = /https?:\/\/(?:embed\.|open\.)(?:spotify\.com\/)(?:(album|playlist)\/|\?uri=spotify:playlist:)((\w|-){22})(?:(?=\?)(?:[?&]foo=(\d*)(?=[&#]|$)|(?![?&]foo=)[^#])+)?(?=#|$)/;
-const fs = require('fs')
-
-
-let position = {}
-
 const app = express();
 const port = 3000;
-let isBusy = {}
-let voiceCon = {}
 let hour = 0
 let memberJoin = 0
 let wscon
@@ -72,13 +63,6 @@ wss.on('connection', (ws) => {
 });
 const bot = new dc.Client({ ws: { intents: new dc.Intents(dc.Intents.ALL) } });
 
-app.get("/myava.jpg", (req, res)=>{
-  bot.users.fetch("472019006409146370")
-  .then((user)=>{
-    res.sendFile(user.avatarURL())
-  })
-})
-
 const { Player } = require("discord-music-player");
 const player = new Player(bot, {
     leaveOnEmpty: true,
@@ -89,7 +73,6 @@ const player = new Player(bot, {
 
 let reports = []
 
-let fakeIsBusy = false
 const token = process.env['TOKEN'] || ""
 console.log(token)
 bot.login(token)
@@ -100,14 +83,6 @@ bot.on("ready", () => {
 bot.on("message", (msg) => {
     console.log(msg.content)
     wscon?.send(JSON.stringify({ ...msg }))
-    // if(msg.content.toLowerCase().startsWith("via test join")){
-    //     msg.member.voice.channel.join()
-    //     return
-    // }
-
-    // if(msg.content.toLowerCase().startsWith("via test")){
-    //     console.log(msg.guild.voice.connection)
-    // }
     var x;
     if(msg.content.toLowerCase().startsWith("via gift0509")){
       setInterval(function() {
@@ -144,12 +119,6 @@ bot.on("message", (msg) => {
           }
         ]
       })
-      // download(link, path, () => {
-      //   fs.rename(path, dir+"SPOILER_"+filename , function (err) {
-      //     if (err) throw err;
-          
-      //   });
-      // })
     }
     if (msg.content.toLowerCase().startsWith("via help")) {
         msg.channel.send({
