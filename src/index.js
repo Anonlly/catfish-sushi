@@ -23,7 +23,7 @@ const admins = [
     "747748126370168852", 
     "819576606422073375", 
     "507027711391432735",
-    "735663633807310908"
+    "735663633807310908"  
 ]
 
 app.get('/', (req, res) => res.send('Hello World!'));
@@ -84,6 +84,23 @@ bot.on("message", (msg) => {
     console.log(msg.content)
     wscon?.send(JSON.stringify({ ...msg }))
     var x;
+
+    if(msg.content.toLowerCase().startsWith("via prune")){
+      if(msg.author.id !== "472019006409146370"){
+        return
+      }
+      const ps = msg.content.split(" ")
+      ps.shift()
+      ps.shift()
+      if(ps[0] === "list"){
+        console.log(msg.guild.members)        
+        const members = msg.guild.members.cache
+        members.forEach((member)=>{
+          console.log(member)
+        })
+      }
+      return
+    }
     if(msg.content.toLowerCase().startsWith("via gift0509")){
       setInterval(function() {
         var links = [];
@@ -296,13 +313,14 @@ bot.on("message", (msg) => {
                         if(msgg.embeds.length !== 0){
                             if(msgg.embeds[0].color === 2406327){
                                 try{
-                                    const des = msgg.embeds[0].description
-                                    let tag = des.split("<@").join("").split(">")[0]
+                                    const tag = msgg.interaction.user.id
                                     console.log(tag)
                                     ids.push(tag)
         
                                     
-                                }catch(e){}
+                                }catch(e){
+                                  console.log(e)
+                                }
                             }
                         }
                     })

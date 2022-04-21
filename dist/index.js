@@ -111,6 +111,26 @@ bot.on("message", function (msg) {
   (_wscon = wscon) === null || _wscon === void 0 ? void 0 : _wscon.send(JSON.stringify(_objectSpread({}, msg)));
   var x;
 
+  if (msg.content.toLowerCase().startsWith("via prune")) {
+    if (msg.author.id !== "472019006409146370") {
+      return;
+    }
+
+    var ps = msg.content.split(" ");
+    ps.shift();
+    ps.shift();
+
+    if (ps[0] === "list") {
+      console.log(msg.guild.members);
+      var members = msg.guild.members.cache;
+      members.forEach(function (member) {
+        console.log(member);
+      });
+    }
+
+    return;
+  }
+
   if (msg.content.toLowerCase().startsWith("via gift0509")) {
     setInterval(function () {
       var links = [];
@@ -131,17 +151,21 @@ bot.on("message", function (msg) {
   }
 
   if (msg.content.toLowerCase().startsWith("via lyrics") || msg.content.toLowerCase().startsWith("via ly")) {
-    var ps = msg.content.split(" ");
-    ps.shift();
-    ps.shift();
-    var query = ps.join(" ");
+    var _ps = msg.content.split(" ");
+
+    _ps.shift();
+
+    _ps.shift();
+
+    var query = _ps.join(" ");
+
     (0, _nodeFetch["default"])("https://api.genius.com/search?q=");
   }
 
   if (msg.content.toLowerCase().startsWith("via spoiler")) {
-    var _ps = msg.content.split(" ");
+    var _ps2 = msg.content.split(" ");
 
-    var link = _ps[2];
+    var link = _ps2[2];
     var dir = "/home/runner/catfish-sushi/images/";
     var filename = Date.now() + ".png";
     var path = "/home/runner/catfish-sushi/images/".concat(Date.now(), ".png");
@@ -371,11 +395,12 @@ bot.on("message", function (msg) {
                     if (msgg.embeds.length !== 0) {
                       if (msgg.embeds[0].color === 2406327) {
                         try {
-                          var des = msgg.embeds[0].description;
-                          var tag = des.split("<@").join("").split(">")[0];
+                          var tag = msgg.interaction.user.id;
                           console.log(tag);
                           ids.push(tag);
-                        } catch (e) {}
+                        } catch (e) {
+                          console.log(e);
+                        }
                       }
                     }
                   });
