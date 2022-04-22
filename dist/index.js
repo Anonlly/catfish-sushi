@@ -83,9 +83,7 @@ wss.on('connection', function (ws) {
   });
 });
 var bot = new dc.Client({
-  ws: {
-    intents: new dc.Intents(dc.Intents.ALL)
-  }
+  intents: [dc.Intents.FLAGS.GUILDS, dc.Intents.FLAGS.GUILD_MESSAGES, dc.Intents.FLAGS.GUILD_MEMBERS, dc.Intents.FLAGS.DIRECT_MESSAGES]
 });
 
 var _require = require("discord-music-player"),

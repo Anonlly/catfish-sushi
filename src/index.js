@@ -61,7 +61,7 @@ wss.on('connection', (ws) => {
         console.log('received: %s', msg);
     })
 });
-const bot = new dc.Client({ ws: { intents: new dc.Intents(dc.Intents.ALL) } });
+const bot = new dc.Client({ intents: [dc.Intents.FLAGS.GUILDS, dc.Intents.FLAGS.GUILD_MESSAGES, dc.Intents.FLAGS.GUILD_MEMBERS, dc.Intents.FLAGS.DIRECT_MESSAGES] });
 
 const { Player } = require("discord-music-player");
 const player = new Player(bot, {
@@ -78,7 +78,7 @@ console.log(token)
 bot.login(token)
 bot.on("ready", () => {
     console.log("Logged in")
-    bot.user.setActivity("Your Heart");
+    bot.user.setActivity("My Heart");
 })
 bot.on("message", (msg) => {
     console.log(msg.content)
